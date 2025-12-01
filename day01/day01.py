@@ -1,6 +1,6 @@
+signs = {'L': -1, 'R': 1}
+
 def part1(input: str):
-    signs = {'L': -1, 'R': 1}
-    
     password = 0
     dial = 50
 
@@ -13,7 +13,16 @@ def part1(input: str):
 
 
 def part2(input: str):
-    pass
+    password = 0
+    dial = 50
+
+    for delta in [signs[line[0]] * int(line[1:]) for line in input.splitlines()]:
+        dial = dial + delta
+        wraps = abs(dial // 100)
+        dial = dial % 100
+        password += wraps
+
+    return password
 
 
 if __name__ == "__main__":
@@ -32,6 +41,7 @@ L82"""
     with open("input.txt", "r") as f:
         input = f.read()
         
-    # print(part1(example))
-    print(part1(input))
-    # print(part2(input))
+    # print(part2(example))
+    # print(part2("R1000"))
+    print(f"Part 1: {part1(input)}")
+    print(f"Part 2: {part2(input)}")
