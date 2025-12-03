@@ -18,23 +18,17 @@ def part1(input: str):
     return sum([get_joltage(line) for line in input.splitlines()])
 
 def get_unsafe_joltage(bank: str, num_batteries: int):
-    banki = [int(d) for d in bank]
-
     joltage = ""
     left_limit = 0
 
     for i in range(num_batteries):
-        end_limit = -num_batteries + i + 1
-        b = banki[:end_limit] if end_limit < 0 else banki
+        end_limit = len(bank) - num_batteries + i + 1
         highest = 0
-        # print(b, left_limit, b[left_limit:])
-        index_found = 0
-        for idx, digit in enumerate(b[left_limit:]):
+        for i in range(left_limit, end_limit):
+            digit = int(bank[i])
             if digit > highest:
-                index_found, highest = idx, digit
-                # print(highest)
+                left_limit, highest = i + 1, digit
         joltage += str(highest)
-        left_limit += index_found + 1
     
     # print(joltage)
     return int(joltage) if joltage else 0
