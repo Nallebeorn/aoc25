@@ -17,9 +17,30 @@ def get_joltage(bank: str):
 def part1(input: str):
     return sum([get_joltage(line) for line in input.splitlines()])
 
+def get_unsafe_joltage(bank: str, num_batteries: int):
+    banki = [int(d) for d in bank]
+
+    joltage = ""
+    left_limit = 0
+
+    for i in range(num_batteries):
+        end_limit = -num_batteries + i + 1
+        b = banki[:end_limit] if end_limit < 0 else banki
+        highest = 0
+        # print(b, left_limit, b[left_limit:])
+        index_found = 0
+        for idx, digit in enumerate(b[left_limit:]):
+            if digit > highest:
+                index_found, highest = idx, digit
+                # print(highest)
+        joltage += str(highest)
+        left_limit += index_found + 1
+    
+    # print(joltage)
+    return int(joltage) if joltage else 0
 
 def part2(input: str):
-    ...
+    return sum([get_unsafe_joltage(line, 12) for line in input.splitlines()])
 
 
 if __name__ == "__main__":
@@ -33,10 +54,12 @@ if __name__ == "__main__":
         input = f.read()
         
     # print(part1(example))
-    print(part2(example))
+    # print(part2(example))
+    # print(part2("234234234234278"))
+    # assert part2(example) == 3121910778619
 
     # print(extend_str_to_len("1", 5))
     # print(extend_str_to_len("12", 5))
     # print(extend_str_to_len("12", 6))
     print(f"Part 1: {part1(input)}")
-    # print(f"Part 2: {part2(input)}")
+    print(f"Part 2: {part2(input)}")
