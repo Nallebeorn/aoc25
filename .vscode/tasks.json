@@ -10,6 +10,9 @@
             "group": "build",
             "options": {
                 "cwd": "${fileDirname}"
+            },
+            "osx": {
+                "command": "python3 ${file}"
             }
         }
     ]
