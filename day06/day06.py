@@ -27,9 +27,7 @@ def part2(input: str):
         if all(line[i] == " " for line in lines):
             nums = []
             for j in range(left_limit, i):
-                n = ""
-                for row in range(len(lines) - 1):
-                    n += lines[row][j]
+                n = "".join(line[j] for line in lines[:-1])
                 nums.append(int(n))
             left_limit = i + 1
             numbers.append(nums)
