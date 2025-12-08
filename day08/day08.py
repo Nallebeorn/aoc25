@@ -38,7 +38,38 @@ def part1(input: str, pairs_count: int):
     return prod(circuit_lengths[:3])
 
 def part2(input: str):
-    ...
+    boxes = [tuple(int(x) for x in line.split(",")) for line in input.splitlines()]
+
+    # boxes.sort()
+    distanced_pairs = []
+    for i, boxa in enumerate(boxes):
+        for boxb in boxes[i+1:]:
+            ax, ay, az = boxa
+            bx, by, bz = boxb
+            dx, dy, dz = bx - ax, by - ay, bz - az
+            distanced_pairs.append((dx * dx + dy * dy + dz * dz, boxa, boxb))
+    
+    distanced_pairs.sort()
+
+    box_circuit = {}
+    circuit_lengths = []
+
+    for box in boxes:
+        box_circuit[box] = len(circuit_lengths)
+        circuit_lengths.append(1)
+
+    for dist, a, b in distanced_pairs:
+        if box_circuit[a] != box_circuit[b]:                
+            circuit_lengths[box_circuit[a]] += circuit_lengths[box_circuit[b]]
+            circuit_lengths[box_circuit[b]] = 0
+            keys = [k for k, v in box_circuit.items() if v == box_circuit[b]]
+            for k in keys:
+                box_circuit[k] = box_circuit[a]
+
+        if (max(circuit_lengths) == len(boxes)):
+            return a[0] * b[0]
+
+    raise
 
 
 if __name__ == "__main__":
@@ -68,7 +99,7 @@ if __name__ == "__main__":
         input = f.read()
         
     print(part1(example, 10))
-    # print(part2(example))
+    print(part2(example))
 
     print(f"Part 1: {part1(input, 1000)}")
-    # print(f"Part 2: {part2(input)}")
+    print(f"Part 2: {part2(input)}")
