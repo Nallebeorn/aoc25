@@ -3,6 +3,7 @@ from math import prod
 def part1(input: str, pairs_count: int):
     boxes = [tuple(int(x) for x in line.split(",")) for line in input.splitlines()]
 
+    # boxes.sort()
     distanced_pairs = []
     for i, boxa in enumerate(boxes):
         for boxb in boxes[i+1:]:
@@ -24,13 +25,15 @@ def part1(input: str, pairs_count: int):
         if box_circuit[a] != box_circuit[b]:                
             circuit_lengths[box_circuit[a]] += circuit_lengths[box_circuit[b]]
             circuit_lengths[box_circuit[b]] = 0
-            for k, v in box_circuit.items():
-                if v == box_circuit[b]:
-                    box_circuit[k] = box_circuit[a]
+            keys = [k for k, v in box_circuit.items() if v == box_circuit[b]]
+            for k in keys:
+                box_circuit[k] = box_circuit[a]
+
         # print(a, b, circuit_lengths)
 
     circuit_lengths = [cl for cl in circuit_lengths if cl != 0]
     circuit_lengths.sort(reverse=True)
+    # print(circuit_lengths)
     assert sum(circuit_lengths) == len(boxes)
     return prod(circuit_lengths[:3])
 
