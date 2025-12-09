@@ -11,9 +11,6 @@ def part1(input: str):
     # print(red_tiles)
     return largest_area
 
-NEITHER_GREEN_NOR_RED = 0
-GREEN = 1
-
 def part2(input: str):
     red_tiles = [tuple(int(x) for x in line.split(",")) for line in input.splitlines()]
 
@@ -22,54 +19,57 @@ def part2(input: str):
     miny = min(y for x, y in red_tiles) - 1
     maxy = max(y for x, y in red_tiles) + 1
     
-    print("Finding green borders...")
-
-    grid: dict[tuple[int, int], int] = {}
+    vertical_edges = set[tuple[int, int]]()
+    horizontal_edges = set[tuple[int, int]]()
     for i, (x1, y1) in enumerate(red_tiles):
         x2, y2 = red_tiles[(i+1) % len(red_tiles)]
         if x1 == x2:
             for y in range(min(y1, y2), max(y1, y2) + 1):
-                grid[x1, y] = GREEN
+                vertical_edges.add((x1, y))
         elif y1 == y2:
             for x in range(min(x1, x2), max(x1, x2) + 1):
-                grid[x, y1] = GREEN
+                horizontal_edges.add((x, y1))
 
+    def is_point_in_green(px: int, py: int):
+        if (px, py) in vertical_edges or (px, py) in horizontal_edges:
+            return True
 
-    print((maxx - minx) * (maxy - miny))
-    print("Flood-filling neither green nor red tiles...")
-    fill_queue = [(minx, miny)]
-    while fill_queue:
-        x, y = fill_queue.pop()
-        if x < minx or x > maxx or y < miny or y > maxy or (x, y) in grid:
-            continue
-        grid[(x, y)] = NEITHER_GREEN_NOR_RED
-        fill_queue.append((x + 1, y))
-        fill_queue.append((x - 1, y))
-        fill_queue.append((x, y + 1))
-        fill_queue.append((x, y - 1))
+        intersectionsx = 0
+        for x in range(px + 1, maxx):
+            if (x, py) in vertical_edges:
+                intersectionsx += 1
 
-    # output = ""
-    # for y in range(miny, maxy + 1):
-    #     for x in range(minx - 1, maxx + 2):
-    #         if grid.get((x, y)) == GREEN:
-    #             if (x, y) in red_tiles:
-    #                 output += "#"
-    #             else:
-    #                 output += "X"
-    #         elif grid.get((x, y)) == NEITHER_GREEN_NOR_RED:
-    #             output += "."
-    #         else:
-    #             output += " "
-    #     output += "\n"
+        intersectionsy = 0
+        for y in range(py + 1, maxy):
+            if (px, y) in horizontal_edges:
+                intersectionsy += 1
+
+        return intersectionsx % 2 == 1 and intersectionsy % 2 == 1
     
-    # print(output)
-
-    def is_rectangle_all_green_or_red(x1, y1, x2, y2):
+    def is_rectangle_all_green(x1, y1, x2, y2):
         for y in range(y1, y2):
             for x in range(x1, x2):
-                if grid.get((x, y)) == NEITHER_GREEN_NOR_RED:
+                if not is_point_in_green(x, y):
                     return False
         return True
+
+    output = ""
+    for y in range(miny, maxy + 1):
+        for x in range(minx, maxx + 1):
+            # if (x, y) in vertical_edges or (x, y) in horizontal_edges:
+            #     if (x, y) in red_tiles:
+            #         output += "#"
+            #     else:
+            #         output += "X"
+            # elif is_point_in_green(x, y):
+            #     output += " "
+            if is_point_in_green(x, y):
+                output += "#"
+            else:
+                output += "."
+        output += "\n"
+    
+    print(output)
 
     print("Finding largest valid rectangle...")
     largest_area = 0
@@ -78,7 +78,8 @@ def part2(input: str):
             x1, x2 = min(ax, bx), max(ax, bx) + 1
             y1, y2 = min(ay, by), max(ay, by) + 1
             area = (x2 - x1) * (y2 - y1)
-            if area > largest_area and is_rectangle_all_green_or_red(x1, y1, x2, y2):
+            if area > largest_area and is_rectangle_all_green(x1, y1, x2, y2):
+                print(x1, y1, x2, y2)
                 largest_area = area
 
     return largest_area
@@ -99,7 +100,7 @@ if __name__ == "__main__":
         input = f.read()
         
     # print(part1(example))
-    # print(part2(example))
+    print(part2(example))
 
     print(f"Part 1: {part1(input)}")
-    print(f"Part 2: {part2(input)}")
+    # print(f"Part 2: {part2(input)}")
