@@ -4,22 +4,6 @@ class Point(NamedTuple):
     x: int
     y: int
 
-class Line(NamedTuple):
-    start: Point
-    end: Point
-
-    def minx(self):
-        return min(self.start.x, self.end.x)
-    
-    def maxx(self):
-        return max(self.start.x, self.end.x)
-    
-    def miny(self):
-        return min(self.start.y, self.end.y)
-    
-    def maxy(self):
-        return max(self.start.y, self.end.y)
-
 def part1(input: str):
     red_tiles = [tuple(int(x) for x in line.split(",")) for line in input.splitlines()]
     largest_area = 0
@@ -32,78 +16,37 @@ def part1(input: str):
     # print(red_tiles)
     return largest_area
 
+
 def part2(input: str):
     red_tiles = [Point(*(int(x) for x in line.split(","))) for line in input.splitlines()]
-    print(red_tiles)
 
-    minx = min(x for x, y in red_tiles) - 1
-    maxx = max(x for x, y in red_tiles) + 1
-    miny = min(y for x, y in red_tiles) - 1
-    maxy = max(y for x, y in red_tiles) + 1
-    
-    edges: list[Line] = []
-    for i, a in enumerate(red_tiles):
-        b = red_tiles[(i+1) % len(red_tiles)]
-        edges.append(Line(min(a, b), max(a, b)))
+    def all_reds_are_on_our_outside_rect(rect_min: Point, rect_max: Point):
+        if rect_min == Point(2, 3) and rect_max == Point(9, 5):
+            print("hi")
 
-    def lines_intersect(a: Line, b: Line):
-        return (
-            a.minx() > b.minx() and
-            a.maxx() < b.maxx() and
-            a.miny() < b.miny() and
-            a.maxy() > b.maxy()
-        ) or (
-            a.minx() < b.minx() and
-            a.maxx() > b.maxx() and
-            a.miny() > b.miny() and
-            a.maxy() < b.maxy()
-        )
-    
-    def any_lines_intersect(list1: list[Line], list2: list[Line]):
-        for a in list1:
-            for b in list2:
-                if lines_intersect(a, b):
-                    print("Intersection!")
-                    return True
-        return False
-    
-    print(lines_intersect(
-        Line(Point(-2, 0), Point(2, 0)),
-        Line(Point(0, -2), Point(0, 2))
-    ))
-
-    # output = ""
-    # for y in range(miny, maxy + 1):
-    #     for x in range(minx, maxx + 1):
-    #         # if (x, y) in vertical_edges or (x, y) in horizontal_edges:
-    #         #     if (x, y) in red_tiles:
-    #         #         output += "#"
-    #         #     else:
-    #         #         output += "X"
-    #         # elif is_point_in_green(x, y):
-    #         #     output += " "
-    #         if is_point_in_green(x, y):
-    #             output += "#"
-    #         else:
-    #             output += "."
-    #     output += "\n"
-    
-    # print(output)
-
-    print("Finding largest valid rectangle...")
+        for red in red_tiles:
+            if (
+                (red.x >= rect_min.x and red.x <= rect_max.x) and
+                (red.y >= rect_min.y and red.y <= rect_max.y) and
+                (red != rect_min and red != rect_max)
+            ):
+                if rect_min == Point(2, 3) and rect_max == Point(9, 5):
+                    print("huh", red)
+                return False
+        return True
+        
     largest_area = 0
     for i, a in enumerate(red_tiles):
-        for b in red_tiles[i+1:]:
-            area = (abs(b.x - a.x) + 1) * (abs(b.y - a.y) + 1)
-            if area > largest_area:
-                rect_edges = [
-                    Line(Point(a.x, a.y), Point(b.x, a.y)),
-                    Line(Point(b.x, a.y), Point(b.x, b.y)),
-                    Line(Point(b.x, b.y), Point(a.x, b.y)),
-                    Line(Point(a.x, b.y), Point(a.x, a.y)),
-                ]
-                if not any_lines_intersect(rect_edges, edges):
-                    largest_area = area
+        for j, b in enumerate(red_tiles[i+1:]):
+            rect_min = Point(min(a.x, b.x), min(a.y, b.y))
+            rect_max = Point(max(a.x, b.x), max(a.y, b.y))
+            area = (rect_max.x - rect_min.x + 1) * (rect_max.y - rect_min.y + 1)
+            if area == 24:
+                print("24", rect_min, rect_max)
+            if area > largest_area and all_reds_are_on_our_outside_rect(rect_min, rect_max):
+                if area == 40:
+                    print("40", rect_min, rect_max)
+                largest_area = area
 
     return largest_area
 
@@ -126,4 +69,4 @@ if __name__ == "__main__":
     print(part2(example))
 
     # print(f"Part 1: {part1(input)}")
-    # print(f"Part 2: {part2(input)}")
+    print(f"Part 2: {part2(input)}")
