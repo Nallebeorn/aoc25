@@ -29,80 +29,55 @@ class Path:
     def concat(self, device: str):
         return Path(self.devices + [device], self.has_dac, self.has_fft)
 
-def find_paths(start: str, end: str, mapping, exclude: set[str]):
-    paths_found = []
+def find_paths(start: str, end: str, mapping, exclude: set[str] = set()):
+    # print("find", start, end)
+    path_count_from: dict[str, int] = {k: 0 for k in mapping.keys()}
     frontier = [[start]]
 
-    path_count_from: dict[str, int] = {k: 0 for k in mapping.keys()}
-
-    i = 0
     while frontier:
         path = frontier.pop()
         device = path[-1]
-        i += 1
+
+        if device in exclude:
+            continue
             
         if device == end:
-            paths_found.append(path)
             for p in path[:-1]:
                 path_count_from[p] += 1
             continue
 
-        if path_count_from[device]:
+        if device in path_count_from and path_count_from[device]:
             for p in path[:-1]:
                 path_count_from[p] += path_count_from[device]
             continue
 
         if device not in mapping:
             continue
-
-        # if device in exclude:
-        #     continue
         
         for output in mapping[device]:
             frontier.append(path + [output])
     
-    print("iterations", i)
-    print("path_count", path_count_from[start])
+    # print("path_count", path_count_from[start])
 
-    return path_count_from[start]
+    return path_count_from[start], set(k for k, v in path_count_from.items() if v > 0)
 
 def part2(input: str):
     device_mapping = {k: tuple(v.split()) for k, v in [line.split(":") for line in input.splitlines()]}
 
-    reverse_mapping = {}
-    for whence, to_list in device_mapping.items():
-        for to in to_list:
-            if to not in reverse_mapping:
-                reverse_mapping[to] = []
-            reverse_mapping[to].append(whence)
+    dac_to_fft, reachable_from_dac = find_paths("dac", "fft", device_mapping)
+    fft_to_dac, reachabled_from_fft = find_paths("fft", "dac", device_mapping)
+    assert (dac_to_fft > 0 and fft_to_dac == 0) or (dac_to_fft == 0 and fft_to_dac > 0)
 
-    path_count = find_paths("svr", "out", device_mapping, set())
+    first = "dac" if dac_to_fft > 0  else "fft"
+    second = "fft" if dac_to_fft > 0 else "dac"
 
-    return path_count
+    exclude = reachable_from_dac.union(reachabled_from_fft)
+    exclude.remove(first)
 
-    # paths_out = []
-    # frontier = [Path(["svr"])]
+    start_to_first, _ = find_paths("svr", first, device_mapping, exclude)
+    second_to_out, _ = find_paths(second, "out", device_mapping)
 
-    # while frontier:
-    #     path = frontier.pop()
-    #     device = path.devices[-1]
-
-    #     match device:
-    #         case "out":
-    #             if path.has_dac and path.has_fft:
-    #                 paths_out.append(path)
-    #             continue
-    #         case "dac":
-    #             path.has_dac = True
-    #         case "fft":
-    #             path.has_fft = True
-        
-    #     for output in device_mapping[device]:
-    #         frontier.append(path.concat(output))
-
-    # print(paths_out)
-    # print(valid_paths_out)
-    return len(paths_out)
+    return start_to_first * max(dac_to_fft, fft_to_dac) * second_to_out
 
 if __name__ == "__main__":
     example = """\
@@ -136,7 +111,7 @@ hhh: out"""
         input = f.read()
         
     # print(part1(example))
-    print(part2(example2))
+    # print(part2(example2))
 
     print(f"Part 1: {part1(input)}")
     print(f"Part 2: {part2(input)}")
