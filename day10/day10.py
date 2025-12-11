@@ -1,5 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from collections import deque
+import heapq
+from typing import Self
 
 @dataclass
 class LightMachine:
@@ -20,6 +22,29 @@ class JoltageMachine:
 class JoltageState:
     joltages: tuple[int, ...]
     presses: int
+    heuristic: int
+
+    def cost(self):
+        return self.presses + self.heuristic
+    
+    def __lt__(self, other: Self):
+        return self.cost() < other.cost()
+
+class PriorityQueue:
+    def __init__(self):
+        self.elements: list[JoltageState] = []
+    
+    def __len__(self):
+        return len(self.elements)
+
+    def empty(self) -> bool:
+        return not self.elements
+    
+    def put(self, item: JoltageState):
+        heapq.heappush(self.elements, item)
+    
+    def get(self) -> JoltageState:
+        return heapq.heappop(self.elements)
 
 
 def parse_lights(string: str):
@@ -71,21 +96,36 @@ def is_joltage_exceeded(maximums: tuple[int, ...], joltages: tuple[int, ...]):
     return False
 
 def solve_machine_joltages(machine: JoltageMachine):
-    queue = deque[JoltageState]()
-    queue.append(JoltageState(tuple(0 for _ in machine.joltages), 0))
+
+    max_increment = tuple(0 for _ in machine.joltages)
+    for button in machine.buttons:
+        max_increment = increment(max_increment, button)
+
+    def get_remaining(joltages):
+        return tuple(target - current for target, current in zip(machine.joltages, joltages))
+    
+    def heuristic(joltages):
+        remaining = get_remaining(joltages)
+        return max(needed // best_step for needed, best_step in zip(remaining, max_increment))
+
+    print("max incr", max_increment)
+
+    queue = PriorityQueue()
+    start_joltages = tuple(0 for _ in machine.joltages)
+    queue.put(JoltageState(start_joltages, 0, heuristic(start_joltages)))
 
     best_for_state = {}
 
     while queue:
-        state = queue.pop()
+        state = queue.get()
 
-        if state.joltages in best_for_state and state.presses >= best_for_state[state.joltages]:
+        if state.joltages in best_for_state and state.cost() >= best_for_state[state.joltages]:
             continue
 
-        if machine.joltages in best_for_state and state.presses >= best_for_state[machine.joltages]:
+        if machine.joltages in best_for_state and state.cost() >= best_for_state[machine.joltages]:
             continue
 
-        best_for_state[state.joltages] = state.presses
+        best_for_state[state.joltages] = state.cost()
 
         if state.joltages == machine.joltages:
             continue
@@ -96,7 +136,8 @@ def solve_machine_joltages(machine: JoltageMachine):
         # print(state.joltages, machine.joltages)
 
         for button in machine.buttons:
-            queue.append(JoltageState(increment(state.joltages, button), state.presses + 1))
+            new_joltages = increment(state.joltages, button)
+            queue.put(JoltageState(new_joltages, state.presses + 1, heuristic(new_joltages)))
 
     assert machine.joltages in best_for_state
     # print(best_for_state[machine.joltages])
@@ -123,7 +164,8 @@ def part2(input: str):
 
     # solve_machine_joltages(machines[0])
 
-    return sum(solve_machine_joltages(machine) for machine in machines)
+    return solve_machine_joltages(machines[0])
+    # return sum(solve_machine_joltages(machine) for machine in machines)
 
 if __name__ == "__main__":
     example = """\
