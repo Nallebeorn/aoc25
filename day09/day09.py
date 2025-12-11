@@ -1,8 +1,47 @@
-from typing import NamedTuple
+from dataclasses import dataclass
 
-class Point(NamedTuple):
+@dataclass
+class Point:
     x: int
     y: int
+
+@dataclass
+class VerticalEdge:
+    x: int
+    y1: int
+    y2: int
+
+    def __init__(self, x, y1, y2):
+        self.x = x
+        self.y1 = min(y1, y2)
+        self.y2 = max(y1, y2)
+
+    def length(self):
+        return self.y2 - self.y1 + 1
+
+@dataclass
+class HorizontalEdge:
+    y: int
+    x1: int
+    x2: int
+
+    def __init__(self, y, x1, x2):
+        self.y = y
+        self.x1 = min(x1, x2)
+        self.x2 = max(x1, x2)
+
+    def length(self):
+        return self.x2 - self.x1 + 1
+
+def intersect(hor: HorizontalEdge, ver: VerticalEdge):
+    return hor.x1 < ver.x and hor.x2 > ver.x and hor.y >= ver.y1 and hor.y <= ver.y2
+
+def any_intersect(horizontal_edges: list[HorizontalEdge], vertical_edges: list[VerticalEdge]):
+    for hor in horizontal_edges:
+        for ver in vertical_edges:
+            if intersect(hor, ver):
+                return True
+    return False
 
 def part1(input: str):
     red_tiles = [tuple(int(x) for x in line.split(",")) for line in input.splitlines()]
@@ -20,33 +59,35 @@ def part1(input: str):
 def part2(input: str):
     red_tiles = [Point(*(int(x) for x in line.split(","))) for line in input.splitlines()]
 
-    def all_reds_are_on_our_outside_rect(rect_min: Point, rect_max: Point):
-        if rect_min == Point(2, 3) and rect_max == Point(9, 5):
-            print("hi")
+    horizontal_edges: list[HorizontalEdge] = []
+    vertical_edges: list[VerticalEdge] = []
+    for i, a in enumerate(red_tiles):
+        b = red_tiles[(i+1) % len(red_tiles)]
+        if a.y == b.y:
+            horizontal_edges.append(HorizontalEdge(a.y, a.x, b.x))
+        if a.x == b.x:
+            vertical_edges.append(VerticalEdge(a.x, a.y, b.y))
 
-        for red in red_tiles:
-            if (
-                (red.x >= rect_min.x and red.x <= rect_max.x) and
-                (red.y >= rect_min.y and red.y <= rect_max.y) and
-                (red != rect_min and red != rect_max)
-            ):
-                if rect_min == Point(2, 3) and rect_max == Point(9, 5):
-                    print("huh", red)
-                return False
-        return True
+    # print(horizontal_edges)
+    # print(vertical_edges)
         
     largest_area = 0
     for i, a in enumerate(red_tiles):
         for j, b in enumerate(red_tiles[i+1:]):
-            rect_min = Point(min(a.x, b.x), min(a.y, b.y))
-            rect_max = Point(max(a.x, b.x), max(a.y, b.y))
-            area = (rect_max.x - rect_min.x + 1) * (rect_max.y - rect_min.y + 1)
-            if area == 24:
-                print("24", rect_min, rect_max)
-            if area > largest_area and all_reds_are_on_our_outside_rect(rect_min, rect_max):
-                if area == 40:
-                    print("40", rect_min, rect_max)
-                largest_area = area
+            top_edge = HorizontalEdge(min(a.y, b.y), a.x, b.x)
+            bottom_edge = HorizontalEdge(max(a.y, b.y), a.x, b.x)
+            left_edge = VerticalEdge(min(a.x, b.x), a.y, b.y)
+            right_edge = VerticalEdge(max(a.x, b.x), a.y, b.y)
+
+            area = top_edge.length() * right_edge.length()
+
+            if area > largest_area:
+                if (
+                    not any_intersect([top_edge, bottom_edge], vertical_edges) and
+                    not any_intersect(horizontal_edges, [left_edge, right_edge])
+                ):
+                    largest_area = area
+
 
     return largest_area
 
@@ -68,5 +109,5 @@ if __name__ == "__main__":
     # print(part1(example))
     print(part2(example))
 
-    # print(f"Part 1: {part1(input)}")
+    print(f"Part 1: {part1(input)}")
     print(f"Part 2: {part2(input)}")
