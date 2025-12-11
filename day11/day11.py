@@ -33,24 +33,38 @@ def find_paths(start: str, end: str, mapping, exclude: set[str]):
     paths_found = []
     frontier = [[start]]
 
+    path_count_from: dict[str, int] = {k: 0 for k in mapping.keys()}
+
+    i = 0
     while frontier:
         path = frontier.pop()
         device = path[-1]
-
+        i += 1
+            
         if device == end:
             paths_found.append(path)
+            for p in path[:-1]:
+                path_count_from[p] += 1
+            continue
+
+        if path_count_from[device]:
+            for p in path[:-1]:
+                path_count_from[p] += path_count_from[device]
             continue
 
         if device not in mapping:
             continue
 
-        if device in exclude:
-            continue
+        # if device in exclude:
+        #     continue
         
         for output in mapping[device]:
             frontier.append(path + [output])
+    
+    print("iterations", i)
+    print("path_count", path_count_from[start])
 
-    return paths_found
+    return path_count_from[start]
 
 def part2(input: str):
     device_mapping = {k: tuple(v.split()) for k, v in [line.split(":") for line in input.splitlines()]}
@@ -62,15 +76,9 @@ def part2(input: str):
                 reverse_mapping[to] = []
             reverse_mapping[to].append(whence)
 
-    paths_out = find_paths("dac", "out", device_mapping, set())
-    exclude_out = set(device for path in paths_out for device in path[1:])
-    paths_in = find_paths("fft", "svr", reverse_mapping, set())
-    exclude_in = set(device for path in paths_in for device in path[1:])
-    paths_2 = find_paths("dac", "fft", reverse_mapping, exclude_out)
+    path_count = find_paths("svr", "out", device_mapping, set())
 
-
-    print(len(paths_out), len(paths_in), len(paths_2))
-    return len(paths_out)
+    return path_count
 
     # paths_out = []
     # frontier = [Path(["svr"])]
