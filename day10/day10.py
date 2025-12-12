@@ -1,7 +1,5 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from collections import deque
-import heapq
-from typing import Self
 
 @dataclass
 class LightMachine:
@@ -16,36 +14,12 @@ class LightState:
 @dataclass
 class JoltageMachine:
     joltages: tuple[int, ...]
-    buttons: list[tuple[int, ...]]
+    buttons: list[tuple[int, ...],]
 
 @dataclass
 class JoltageState:
-    joltages: tuple[int, ...]
-    presses: int
-    heuristic: int
-
-    def cost(self):
-        return self.presses + self.heuristic
-    
-    def __lt__(self, other: Self):
-        return self.cost() < other.cost()
-
-class PriorityQueue:
-    def __init__(self):
-        self.elements: list[JoltageState] = []
-    
-    def __len__(self):
-        return len(self.elements)
-
-    def empty(self) -> bool:
-        return not self.elements
-    
-    def put(self, item: JoltageState):
-        heapq.heappush(self.elements, item)
-    
-    def get(self) -> JoltageState:
-        return heapq.heappop(self.elements)
-
+    joltage: int
+    presses: tuple[int, ...]
 
 def parse_lights(string: str):
     return tuple(c == "#" for c in string.strip("[]"))
@@ -65,6 +39,9 @@ def increment(joltages: tuple[int, ...], button: tuple[int, ...]):
     result = tuple(jolt + 1 if i in button else jolt for i, jolt in enumerate(joltages))
     # print(joltages, result)
     return result
+
+def press_button(presses: tuple[int, ...], button_index: int):
+    return tuple(p + 1 if i == button_index else p for i, p in enumerate(presses))
 
 def solve_machine_lights(machine: LightMachine):
     queue = deque[LightState]()
@@ -95,24 +72,32 @@ def is_joltage_exceeded(maximums: tuple[int, ...], joltages: tuple[int, ...]):
             return True
     return False
 
-def solve_machine_joltages(machine: JoltageMachine):
-    jolt = machine.joltages[0]
-    distributions = distribute_presses(jolt, machine.buttons)
-    print("dist", distribute_presses(5, [10, 20, 30]))
+def solve_machine_joltages(target_joltage: int, buttons: list[tuple[int, ...]]):
+    current = [0] * len(buttons)
+    current[0] = 3
 
-def distribute_presses(total_jolts, buttons):
-    distributions = set()
-    frontier = [[total_jolts, 0, 0]]
-    while frontier:
-        nodes = frontier.pop()
-        node = nodes[-1]
-        jolt, btn = node
-        for j in range(jolt):
-            for b in range(btn + 1, len(buttons)):
-                frontier.append(nodes + [(j, b)])
+    result = set()
 
-    return distributions
-    
+    stop = False
+    while not stop:
+        if sum(current) == target_joltage:
+            result.add(tuple(current))
+        
+        # print(current)
+        acc = target_joltage
+        for i in range(len(current)):
+            current[i] += acc
+            if current[i] > target_joltage:
+                current[i] = current[i] % (target_joltage + 1)
+                acc = 1
+                if i+1 == len(current):
+                    stop = True
+            else:
+                break
+
+    print(result)
+
+    return 0
 
 def part1(input: str):
     machines = []
@@ -123,9 +108,8 @@ def part1(input: str):
 
     return sum(solve_machine_lights(machine) for machine in machines)
 
-
 def part2(input: str):
-    machines = []
+    machines: list[JoltageMachine] = []
 
     for line in input.splitlines():
         segments = line.split()
@@ -133,9 +117,10 @@ def part2(input: str):
 
     # print(machines)
 
-    # solve_machine_joltages(machines[0])
+    machine = machines[0]
 
-    return solve_machine_joltages(machines[0])
+    return solve_machine_joltages(machine.joltages[0], [button for button in machine.buttons if 0 in button])
+
     # return sum(solve_machine_joltages(machine) for machine in machines)
 
 if __name__ == "__main__":
@@ -150,5 +135,5 @@ if __name__ == "__main__":
     # print(part1(example))
     print(part2(example))
 
-    print(f"Part 1: {part1(input)}")
+    # print(f"Part 1: {part1(input)}")
     print(f"Part 2: {part2(input)}")
