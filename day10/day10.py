@@ -96,52 +96,23 @@ def is_joltage_exceeded(maximums: tuple[int, ...], joltages: tuple[int, ...]):
     return False
 
 def solve_machine_joltages(machine: JoltageMachine):
+    jolt = machine.joltages[0]
+    distributions = distribute_presses(jolt, machine.buttons)
+    print("dist", distribute_presses(5, [10, 20, 30]))
 
-    max_increment = tuple(0 for _ in machine.joltages)
-    for button in machine.buttons:
-        max_increment = increment(max_increment, button)
+def distribute_presses(total_jolts, buttons):
+    distributions = set()
+    frontier = [[total_jolts, 0, 0]]
+    while frontier:
+        nodes = frontier.pop()
+        node = nodes[-1]
+        jolt, btn = node
+        for j in range(jolt):
+            for b in range(btn + 1, len(buttons)):
+                frontier.append(nodes + [(j, b)])
 
-    def get_remaining(joltages):
-        return tuple(target - current for target, current in zip(machine.joltages, joltages))
+    return distributions
     
-    def heuristic(joltages):
-        remaining = get_remaining(joltages)
-        return max(needed // best_step for needed, best_step in zip(remaining, max_increment))
-
-    print("max incr", max_increment)
-
-    queue = PriorityQueue()
-    start_joltages = tuple(0 for _ in machine.joltages)
-    queue.put(JoltageState(start_joltages, 0, heuristic(start_joltages)))
-
-    best_for_state = {}
-
-    while queue:
-        state = queue.get()
-
-        if state.joltages in best_for_state and state.cost() >= best_for_state[state.joltages]:
-            continue
-
-        if machine.joltages in best_for_state and state.cost() >= best_for_state[machine.joltages]:
-            continue
-
-        best_for_state[state.joltages] = state.cost()
-
-        if state.joltages == machine.joltages:
-            continue
-
-        if is_joltage_exceeded(machine.joltages, state.joltages):
-            continue
-        
-        # print(state.joltages, machine.joltages)
-
-        for button in machine.buttons:
-            new_joltages = increment(state.joltages, button)
-            queue.put(JoltageState(new_joltages, state.presses + 1, heuristic(new_joltages)))
-
-    assert machine.joltages in best_for_state
-    # print(best_for_state[machine.joltages])
-    return best_for_state[machine.joltages]
 
 def part1(input: str):
     machines = []
