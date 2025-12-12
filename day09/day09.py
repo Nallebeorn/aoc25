@@ -39,7 +39,7 @@ def intersect(hor: HorizontalEdge, ver: VerticalEdge):
 def point_in_polygon(point: Point, vertical_edges: list[VerticalEdge]):
     hit_count = 0
     for edge in vertical_edges:
-        if point.x < edge.x and point.y >= edge.y1 and point.y <= edge.y2:
+        if point.x > edge.x and point.y > edge.y1 and point.y < edge.y2:
             hit_count += 1
     
     return hit_count % 2 == 1
@@ -77,27 +77,6 @@ def part2(input: str):
             vertical_edges.append(VerticalEdge(a.x, a.y, b.y))
     
     assert len(horizontal_edges) == len(vertical_edges)
-
-    # for a in horizontal_edges:
-    #     for b in horizontal_edges:
-    #         if a == b:
-    #             continue
-    #         if abs(a.y - b.y) == 1:
-    #             print("hor hmmm")
-
-    # for a in vertical_edges:
-    #     for b in vertical_edges:
-    #         if a == b:
-    #             continue
-    #         if abs(a.x - b.x) == 1:
-    #             print("ver hmmm")
-    #             if a.y1 >= b.y1 and a.y1 <= b.y1:
-    #                 print("fuck")
-    #             if a.y2 <= b.y2 and a.y2 <= b.y1:
-    #                 print("still fuck")
-
-    # print(horizontal_edges)
-    # print(vertical_edges)
         
     largest_area = 0
     for i, a in enumerate(red_tiles):
@@ -111,7 +90,7 @@ def part2(input: str):
 
             if area > largest_area:
                 mid_point = Point((top_edge.x1 + top_edge.x2) // 2, (right_edge.y1 + right_edge.y2) // 2)
-                # if area == 24:
+                # if area > 33:
                 #     print(area, Point(left_edge.x, top_edge.y), Point(right_edge.x, bottom_edge.y),
                 #           not any_intersect([top_edge, bottom_edge], vertical_edges),
                 #           not any_intersect(horizontal_edges, [left_edge, right_edge]),
@@ -121,6 +100,10 @@ def part2(input: str):
                 if (
                     not any_intersect([top_edge, bottom_edge], vertical_edges)
                     and not any_intersect(horizontal_edges, [left_edge, right_edge])
+                    and point_in_polygon(Point(left_edge.x + 1, top_edge.y + 1), vertical_edges)
+                    and point_in_polygon(Point(right_edge.x - 1, top_edge.y + 1), vertical_edges)
+                    and point_in_polygon(Point(left_edge.x + 1, bottom_edge.y - 1), vertical_edges)
+                    and point_in_polygon(Point(right_edge.x - 1, bottom_edge.y - 1), vertical_edges)
                     and point_in_polygon(mid_point, vertical_edges)
                 ):
                     largest_area = area
@@ -151,6 +134,17 @@ if __name__ == "__main__":
 1,11
 """
 
+    example3 = """\
+1,1
+3,1
+3,9
+11,9
+11,1
+13,1
+13,11
+1,11
+"""
+
     with open("input.txt", "r") as f:
         input = f.read()
         
@@ -158,9 +152,12 @@ if __name__ == "__main__":
     print(part2(example))
     print(part2(example2))
 
-    # print(f"Part 1: {part1(input)}")
+    print(f"Part 1: {part1(input)}")
     print(f"Part 2: {part2(input)}")
 
 
 # 2128582144 - too high
-# 2375130720 - presumably also too high (yes)
+# 2375130720 - presumably also too high 
+# 1924954374 - 
+# 631669768 -
+# 1644094530 - correct
