@@ -34,12 +34,12 @@ class HorizontalEdge:
         return self.x2 - self.x1 + 1
 
 def intersect(hor: HorizontalEdge, ver: VerticalEdge):
-    return hor.x1 < ver.x and hor.x2 > ver.x and hor.y >= ver.y1 and hor.y <= ver.y2
+    return hor.x1 < ver.x and hor.x2 > ver.x and hor.y > ver.y1 and hor.y < ver.y2
 
 def point_in_polygon(point: Point, vertical_edges: list[VerticalEdge]):
     hit_count = 0
     for edge in vertical_edges:
-        if edge.x > point.x and point.y >= edge.y1 and point.y <= edge.y2:
+        if point.x < edge.x and point.y >= edge.y1 and point.y <= edge.y2:
             hit_count += 1
     
     return hit_count % 2 == 1
@@ -111,11 +111,17 @@ def part2(input: str):
 
             if area > largest_area:
                 mid_point = Point((top_edge.x1 + top_edge.x2) // 2, (right_edge.y1 + right_edge.y2) // 2)
+                # if area == 24:
+                #     print(area, Point(left_edge.x, top_edge.y), Point(right_edge.x, bottom_edge.y),
+                #           not any_intersect([top_edge, bottom_edge], vertical_edges),
+                #           not any_intersect(horizontal_edges, [left_edge, right_edge]),
+                #           point_in_polygon(mid_point, vertical_edges)
+                #         )
 
                 if (
-                    not any_intersect([top_edge, bottom_edge], vertical_edges) and
-                    not any_intersect(horizontal_edges, [left_edge, right_edge]) and
-                    point_in_polygon(mid_point, vertical_edges)
+                    not any_intersect([top_edge, bottom_edge], vertical_edges)
+                    and not any_intersect(horizontal_edges, [left_edge, right_edge])
+                    and point_in_polygon(mid_point, vertical_edges)
                 ):
                     largest_area = area
 
@@ -157,3 +163,4 @@ if __name__ == "__main__":
 
 
 # 2128582144 - too high
+# 2375130720 - presumably also too high (yes)
