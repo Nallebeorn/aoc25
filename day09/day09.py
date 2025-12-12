@@ -36,6 +36,14 @@ class HorizontalEdge:
 def intersect(hor: HorizontalEdge, ver: VerticalEdge):
     return hor.x1 < ver.x and hor.x2 > ver.x and hor.y >= ver.y1 and hor.y <= ver.y2
 
+def point_in_polygon(point: Point, vertical_edges: list[VerticalEdge]):
+    hit_count = 0
+    for edge in vertical_edges:
+        if edge.x > point.x and point.y >= edge.y1 and point.y <= edge.y2:
+            hit_count += 1
+    
+    return hit_count % 2 == 1
+
 def any_intersect(horizontal_edges: list[HorizontalEdge], vertical_edges: list[VerticalEdge]):
     for hor in horizontal_edges:
         for ver in vertical_edges:
@@ -70,23 +78,23 @@ def part2(input: str):
     
     assert len(horizontal_edges) == len(vertical_edges)
 
-    for a in horizontal_edges:
-        for b in horizontal_edges:
-            if a == b:
-                continue
-            if abs(a.y - b.y) == 1:
-                print("hor hmmm")
+    # for a in horizontal_edges:
+    #     for b in horizontal_edges:
+    #         if a == b:
+    #             continue
+    #         if abs(a.y - b.y) == 1:
+    #             print("hor hmmm")
 
-    for a in vertical_edges:
-        for b in vertical_edges:
-            if a == b:
-                continue
-            if abs(a.x - b.x) == 1:
-                print("ver hmmm")
-                if a.y1 >= b.y1 and a.y1 <= b.y1:
-                    print("fuck")
-                if a.y2 <= b.y2 and a.y2 <= b.y1:
-                    print("still fuck")
+    # for a in vertical_edges:
+    #     for b in vertical_edges:
+    #         if a == b:
+    #             continue
+    #         if abs(a.x - b.x) == 1:
+    #             print("ver hmmm")
+    #             if a.y1 >= b.y1 and a.y1 <= b.y1:
+    #                 print("fuck")
+    #             if a.y2 <= b.y2 and a.y2 <= b.y1:
+    #                 print("still fuck")
 
     # print(horizontal_edges)
     # print(vertical_edges)
@@ -102,14 +110,13 @@ def part2(input: str):
             area = top_edge.length() * right_edge.length()
 
             if area > largest_area:
+                mid_point = Point((top_edge.x1 + top_edge.x2) // 2, (right_edge.y1 + right_edge.y2) // 2)
+
                 if (
                     not any_intersect([top_edge, bottom_edge], vertical_edges) and
-                    not any_intersect(horizontal_edges, [left_edge, right_edge])
+                    not any_intersect(horizontal_edges, [left_edge, right_edge]) and
+                    point_in_polygon(mid_point, vertical_edges)
                 ):
-                    c = 0
-                    for x in range(left_edge.x, right_edge.x + 1):
-                        for y in range(top_edge.y, bottom_edge.y + 1):
-                            c += 1
                     largest_area = area
 
 
@@ -146,7 +153,7 @@ if __name__ == "__main__":
     print(part2(example2))
 
     # print(f"Part 1: {part1(input)}")
-    # print(f"Part 2: {part2(input)}")
+    print(f"Part 2: {part2(input)}")
 
 
 # 2128582144 - too high
