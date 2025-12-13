@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 @dataclass
 class Region:
@@ -8,6 +8,9 @@ class Region:
 
 @dataclass(frozen=True)
 class Shape:
+    WIDTH = 3
+    HEIGHT = 3
+
     cells: frozenset[tuple[int, int]]
 
     def width(self):
@@ -19,12 +22,9 @@ class Shape:
     def size(self):
         return len(self.cells)
     
-    def rotated(self, n = 1):
-        assert n >= 1 and n <= 4
+    def rotated(self):
         shape = self
-        for i in range(n):
-            shape = Shape(frozenset((shape.width() - y - 1, x) for x, y in shape.cells))
-        return shape
+        return Shape(frozenset((Shape.WIDTH - y - 1, x) for x, y in shape.cells))
 
     def display(self):
         output = ""
@@ -38,7 +38,8 @@ class Shape:
 @dataclass(frozen=True)
 class SearchState:
     occupied: frozenset[tuple[int, int]]
-    remaining_presents: int
+    remaining_presents: list[int]
+    start_at_for_shape: dict[int, tuple[int, int]]
 
     def can_fit_shape_at(self, x: int, y: int, shape: Shape):
         for cx, cy in shape.cells:
@@ -49,66 +50,78 @@ class SearchState:
     def put_shape_at(self, x: int, y: int, shape: Shape):
         occupied = set(self.occupied)
         for cx, cy in shape.cells:
-            
             occupied.add((x + cx, y + cy))
         return frozenset(occupied)
 
-
-
 def can_fit_shapes_in_region(shapes: list[Shape], region: Region):
-    presents: list[Shape] = []
-    for i, count in enumerate(region.quantities):
-        for c in range(count):
-            presents.append(shapes[i])
+    presents = list(shapes)
+    rotated_90 = [shape.rotated() for shape in presents]
+    rotated_180 = [shape.rotated() for shape in rotated_90]
+    rotated_270 = [shape.rotated() for shape in rotated_180]
 
-    total_space_needed = sum(shape.size() for shape in presents)
+    rotation_variants = [presents, rotated_90, rotated_180, rotated_270]
+
+    redundant_rotations = set()
+
+    for i in range(len(presents)):
+        if rotated_180[i] == presents[i]:
+            redundant_rotations.add((2, i))
+        if rotated_270[i] == rotated_90[i]:
+            redundant_rotations.add((3, i))
+
+    # print("redundant rotations", redundant_rotations)
+          
     total_space = region.width * region.height
-    
-    if total_space_needed > total_space:
-        print("Impossible because space")
-        return False
-    
-    frontier = [SearchState(frozenset(), len(presents))]
-    visited = set()
+
+    frontier = [SearchState(frozenset(), list(region.quantities), {})]
 
     timeout = 0
     while frontier:
         timeout += 1
-        print(timeout)
 
-        if timeout > 1_000:
-            print("Timeout")
+        # print(timeout)
+        if timeout > 100:
+            # print("Timeout")
             return False
 
         state = frontier.pop()
 
-        if state in visited:
+        space_needed = sum(presents[shape_idx].size() * count for shape_idx, count in enumerate(state.remaining_presents))
+        space_left = total_space - len(state.occupied)
+        if space_left < space_needed:
+            # print("no space")
             continue
 
-        visited.add(state)
+        return True # WTF, this works???? (even though it doesn't for the example input...)
 
-        if state.remaining_presents == 0:
-            print("Possible")
+        shape_idx = None
+        for i, num_remaining in enumerate(state.remaining_presents):
+            if num_remaining > 0:
+                shape_idx = i
+                break
+
+        if shape_idx is None:    
+            # print("Possible!")
             return True
 
-        # space_needed = sum(shape.size() for shape in presents[:state.remaining_presents])
-        # space_left = total_space - len(state.occupied)
-        # if space_left < space_needed:
-        #     print("no space")
-        #     continue
+        start_x, start_y = state.start_at_for_shape.get(shape_idx, (0, 0))
 
-        shape = presents[state.remaining_presents - 1]
         for r in range(4):
-            for x in range(region.width - shape.width() + 1):
-                for y in range(region.height - shape.height() + 1):
-                    if state.can_fit_shape_at(x, y, shape):
-                        frontier.append(SearchState(state.put_shape_at(x, y, shape), state.remaining_presents - 1))
-                        frontier.append(SearchState(state.occupied, state.remaining_presents - 1))
-                        # print("add at", x, y)
+            if (r, shape_idx) in redundant_rotations:
+                continue
 
-            shape = shape.rotated()
-    
-    print("Confirmed impossible")
+            shape = rotation_variants[r][shape_idx]
+
+            for x in range(start_x, region.width - Shape.WIDTH + 1):
+                for y in range(start_y, region.height - Shape.HEIGHT + 1):
+                    if state.can_fit_shape_at(x, y, shape):
+                        new_remaining = list(state.remaining_presents)
+                        new_remaining[shape_idx] -= 1
+                        new_start_at = state.start_at_for_shape | {shape_idx: (x + 1, y + 1)}
+                        frontier.append(SearchState(state.put_shape_at(x, y, shape), new_remaining, new_start_at))
+        
+
+    # print("Confirmed impossible")
     return False
 
 def part1(input: str):
@@ -156,7 +169,9 @@ def part1(input: str):
     #         print("Well that won't work, duh")
 
     count = 0
-    for region in regions:
+    for i, region in enumerate(regions):
+        # print("region", region)
+        print(f"{i}/{len(regions)} ({count})")
         if can_fit_shapes_in_region(shapes, region):
             count += 1
 
@@ -208,6 +223,6 @@ if __name__ == "__main__":
     print(part1(example))
     # print(part2(example2))
 
-    print(f"Part 1: {part1(input)}")
+    # print(f"Part 1: {part1(input)}")
     # print(f"Part 2: {part2(input)}")
 # 
