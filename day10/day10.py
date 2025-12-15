@@ -13,13 +13,14 @@ class LightState:
 
 @dataclass
 class JoltageMachine:
-    joltages: tuple[int, ...]
+    joltages: list[int]
     buttons: list[tuple[int, ...],]
 
 @dataclass
 class JoltageState:
-    joltage: int
-    presses: tuple[int, ...]
+    joltage: list[int]
+    presses: list[int]
+    next_button: int
 
 def parse_lights(string: str):
     return tuple(c == "#" for c in string.strip("[]"))
@@ -28,7 +29,7 @@ def parse_buttons(buttons: list[str]):
     return [tuple(int(x) for x in b.strip("()").split(",")) for b in buttons if b.startswith("(")]
 
 def parse_joltages(string: str):
-    return tuple(int(x) for x in string.strip("{}").split(","))
+    return [int(x) for x in string.strip("{}").split(",")]
 
 def toggle(lights: tuple[bool, ...], button: tuple[int, ...]):
     result = tuple(not light if i in button else light for i, light in enumerate(lights))
@@ -72,32 +73,53 @@ def is_joltage_exceeded(maximums: tuple[int, ...], joltages: tuple[int, ...]):
             return True
     return False
 
-def solve_machine_joltages(target_joltage: int, buttons: list[tuple[int, ...]]):
-    current = [0] * len(buttons)
-    current[0] = 3
+def solve_machine_joltages(target_joltages: list[int], buttons: list[tuple[int, ...]]):
+    best = None
 
-    result = set()
+    queue = deque[JoltageState]()
+    queue.append(JoltageState([0 for _ in target_joltages], [0 for _ in buttons], 0))
 
-    stop = False
-    while not stop:
-        if sum(current) == target_joltage:
-            result.add(tuple(current))
-        
-        # print(current)
-        acc = target_joltage
-        for i in range(len(current)):
-            current[i] += acc
-            if current[i] > target_joltage:
-                current[i] = current[i] % (target_joltage + 1)
-                acc = 1
-                if i+1 == len(current):
-                    stop = True
-            else:
-                break
+    i = 0
+    while queue:
+        i += 1
+        print(i)
+        state = queue.popleft()
 
-    print(result)
+        total_presses = sum(state.presses)
 
-    return 0
+        # print(state)
+
+        # if best is not None and total_presses >= best:
+        #     continue
+
+        if target_joltages == state.joltage:
+            if best is None or total_presses < best:
+                best = total_presses
+            continue
+
+        # if any(jolt > target for jolt, target in zip(state.joltage, target_joltages)):
+        #     continue
+
+        if state.next_button >= len(buttons):
+            continue
+
+        button = buttons[state.next_button]
+        remaining = [target_joltages[machine] - state.joltage[machine] for machine in button]
+
+        for press_count in range(1, min(remaining) + 1):
+            new_presses = list(state.presses)
+            new_presses[state.next_button] += press_count
+
+            new_joltage = list(state.joltage)
+            for machine in button:
+                new_joltage[machine] += press_count
+
+            queue.append(JoltageState(new_joltage, new_presses, state.next_button + 1))
+
+    print("iteration count", i)
+
+    assert best is not None
+    return best
 
 def part1(input: str):
     machines = []
@@ -117,9 +139,8 @@ def part2(input: str):
 
     # print(machines)
 
-    machine = machines[0]
-
-    return solve_machine_joltages(machine.joltages[0], [button for button in machine.buttons if 0 in button])
+    for machine in machines:
+        print(solve_machine_joltages(machine.joltages, machine.buttons))
 
     # return sum(solve_machine_joltages(machine) for machine in machines)
 
@@ -137,3 +158,4 @@ if __name__ == "__main__":
 
     # print(f"Part 1: {part1(input)}")
     print(f"Part 2: {part2(input)}")
+
