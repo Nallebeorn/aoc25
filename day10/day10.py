@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from collections import deque
+from sympy import Matrix, Rational, simplify
 
 @dataclass
 class LightMachine:
@@ -76,29 +77,29 @@ def is_joltage_exceeded(maximums: tuple[int, ...], joltages: tuple[int, ...]):
 def solve_machine_joltages(target_joltages: list[int], buttons: list[tuple[int, ...]]):
     best = None
 
+    print("unsorted", buttons)
+    buttons.sort(key = len, reverse = True)
+    print("sorted", buttons)
     queue = deque[JoltageState]()
     queue.append(JoltageState([0 for _ in target_joltages], [0 for _ in buttons], 0))
 
     i = 0
     while queue:
         i += 1
-        print(i)
+        # print(i)
         state = queue.popleft()
 
         total_presses = sum(state.presses)
 
         # print(state)
 
-        # if best is not None and total_presses >= best:
-        #     continue
+        if best is not None and total_presses >= best:
+            continue
 
         if target_joltages == state.joltage:
             if best is None or total_presses < best:
                 best = total_presses
             continue
-
-        # if any(jolt > target for jolt, target in zip(state.joltage, target_joltages)):
-        #     continue
 
         if state.next_button >= len(buttons):
             continue
@@ -106,7 +107,7 @@ def solve_machine_joltages(target_joltages: list[int], buttons: list[tuple[int, 
         button = buttons[state.next_button]
         remaining = [target_joltages[machine] - state.joltage[machine] for machine in button]
 
-        for press_count in range(1, min(remaining) + 1):
+        for press_count in range(min(remaining) + 1):
             new_presses = list(state.presses)
             new_presses[state.next_button] += press_count
 
@@ -139,10 +140,35 @@ def part2(input: str):
 
     # print(machines)
 
-    for machine in machines:
-        print(solve_machine_joltages(machine.joltages, machine.buttons))
+    m = Matrix([
+        [0, 0, 0, 0, 1, 1, 3],
+        [0, 1, 0, 0, 0, 1, 5],
+        [0, 1, 1, 1, 0, 0, 4],
+        [1, 1, 0, 1, 0, 0, 7]
+    ])
+    # print(m.rref(pivots=False).col(-1).values())
 
-    # return sum(solve_machine_joltages(machine) for machine in machines)
+    result = 0
+    for machine in machines:
+        # print(machine)
+        matrix = Matrix([
+            [1 if i in button else 0 for button in machine.buttons] + [target_joltage]
+            for i, target_joltage in enumerate(machine.joltages)
+        ])
+        rref, pivots = matrix.rref(normalize_last=False)
+        solutions = rref.col(-1).flat()[:len(pivots)]
+        # print(matrix)
+        # print(sum(solutions) - min(solutions))
+        summed = sum(solutions) - min(solutions)
+        if summed.q != 1:
+            print(machine)
+            print(solutions, pivots, sum(solutions), sum(solutions) - min(solutions), summed)
+        # print(sum(solutions) - min(solutions), summed, summed.p * summed.q)
+        # result += sum(solutions) - min(solutions)
+        result += summed.p * summed.q
+        # print(sum(solutions))
+
+    return result
 
 if __name__ == "__main__":
     example = """\
@@ -154,8 +180,10 @@ if __name__ == "__main__":
         input = f.read()
         
     # print(part1(example))
-    print(part2(example))
+    # print(part2(example))
 
     # print(f"Part 1: {part1(input)}")
     print(f"Part 2: {part2(input)}")
 
+
+# 52070 - too high
