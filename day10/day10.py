@@ -152,21 +152,56 @@ def part2(input: str):
     for machine in machines:
         # print(machine)
         matrix = Matrix([
-            [1 if i in button else 0 for button in machine.buttons] + [target_joltage]
+            [1 if i in button else 0 for button in machine.buttons] + [0, target_joltage]
             for i, target_joltage in enumerate(machine.joltages)
+        ] + [
+            [1 for _ in machine.buttons] + [-1, 0]
         ])
-        rref, pivots = matrix.rref(normalize_last=False)
-        solutions = rref.col(-1).flat()[:len(pivots)]
+
         # print(matrix)
-        # print(sum(solutions) - min(solutions))
-        summed = sum(solutions) - min(solutions)
-        if summed.q != 1:
-            print(machine)
-            print(solutions, pivots, sum(solutions), sum(solutions) - min(solutions), summed)
-        # print(sum(solutions) - min(solutions), summed, summed.p * summed.q)
-        # result += sum(solutions) - min(solutions)
-        result += summed.p * summed.q
-        # print(sum(solutions))
+
+        rref, pivots = matrix.rref(normalize_last=False)
+        solutions = rref.col(-1).values()
+        foo = [row[-1] * row[-2].q / row[-2].p for row in rref.values()]
+        foo2 = [(row[-2], row[-1]) for row in rref.tolist()]
+        # foo = max(-row[-1] for row in rref.tolist() if row[-2] != 0)
+        # answer = 1
+        # while not all(coefficient - sign * answer >= 0 for sign, coefficient in foo):
+        # for answer in range(13):
+        #     print(answer, [coefficient - sign * answer for sign, coefficient in foo2], sum([coefficient - sign * answer for sign, coefficient in foo2]))
+        #     answer += 1
+
+        print(foo)
+
+        continue
+
+        answer = min(foo) * -1
+        # assert answer > 0
+        # assert answer.q == 1
+        print([f"{coefficient} + {-sign}x" for sign, coefficient in foo2])
+        if (foo2[-1][0] == 1):
+            answer = foo2[-1][1]
+        assert answer >= 0
+        # answer = answer.p * answer.q
+        assert answer.q == 1
+        # while sum(coefficient - sign * answer for sign, coefficient in foo2) != answer or not all(coefficient - sign * answer >= 0 for sign, coefficient in foo2):
+        #     print(answer, [coefficient - sign * answer  for sign, coefficient in foo2], sum(coefficient - sign * answer for sign, coefficient in foo2))
+        #     answer += 1
+        # if answer <= 0:
+        #     print(machine, foo)
+        #     print([f"{coefficient} + {-sign}x" for sign, coefficient in foo2])
+        # print(answer)
+        result += answer
+        # # print(matrix)
+        # # print(sum(solutions) - min(solutions))
+        # summed = sum(solutions) - min(solutions)
+        # if summed.q != 1:
+        #     print(machine)
+        #     print(solutions, pivots, sum(solutions), sum(solutions) - min(solutions), summed)
+        # # print(sum(solutions) - min(solutions), summed, summed.p * summed.q)
+        # # result += sum(solutions) - min(solutions)
+        # result += summed.p * summed.q
+        # # print(sum(solutions))
 
     return result
 
@@ -180,10 +215,13 @@ if __name__ == "__main__":
         input = f.read()
         
     # print(part1(example))
-    # print(part2(example))
+    print(part2(example))
 
     # print(f"Part 1: {part1(input)}")
-    print(f"Part 2: {part2(input)}")
+    # print(f"Part 2: {part2(input)}")
 
 
 # 52070 - too high
+# 67271 - well fuck that can't be right then
+# 104920 - lmao, no
+# 104977 - well no
